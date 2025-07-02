@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Glossy Calculator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #5dade2 0%, #85c1e9 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        .calculator-base {
+            background: rgba(255, 255, 255, 0.35);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(12px);
+            border-radius: 32px;
+            border: 1.5px solid rgba(255,255,255,0.18);
+            padding: 32px 24px 24px 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 320px;
+            max-width: 340px;
+            transition: box-shadow 0.2s;
+        }
+        .display {
+            width: 100%;
+            background: rgba(255,255,255,0.55);
+            border-radius: 18px;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.12);
+            margin-bottom: 24px;
+            padding: 18px 16px;
+            font-size: 2.1rem;
+            color: #154360;
+            text-align: right;
+            letter-spacing: 2px;
+            overflow-x: auto;
+            font-family: 'Consolas', monospace;
+            border: none;
+            outline: none;
+            user-select: none;
+            transition: background 0.2s;
+        }
+        .buttons {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+        .btn {
+            background: rgba(255,255,255,0.75);
+            border: none;
+            border-radius: 50px;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.10);
+            font-size: 1.3rem;
+            color: #21618c;
+            padding: 18px 0;
+            cursor: pointer;
+            transition: 
+                transform 0.13s cubic-bezier(.4,2,.6,1),
+                background 0.2s;
+            font-weight: 600;
+            outline: none;
+            user-select: none;
+        }
+        .btn:active,
+        .btn:hover {
+            background: rgba(133,193,233,0.85);
+            transform: scale(1.08);
+        }
+        .btn:active {
+            transform: scale(0.96);
+        }
+        .btn.operator {
+            color: #2874a6;
+            background: rgba(174,214,241,0.85);
+        }
+        .btn.equals {
+            background: linear-gradient(90deg, #5dade2 60%, #85c1e9 100%);
+            color: #fff;
+            font-weight: bold;
+        }
+        .btn.clear {
+            background: rgba(255, 255, 255, 0.95);
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        /* Hide scrollbar for display */
+        .display::-webkit-scrollbar {
+            display: none;
+        }
+        .display {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Responsive */
+        @media (max-width: 400px) {
+            .calculator-base {
+                min-width: 90vw;
+                padding: 18px 6vw 18px 6vw;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator-base">
+        <div class="display" id="display">0</div>
+        <div class="buttons">
+            <button class="btn clear" onclick="clearDisplay()">C</button>
+            <button class="btn operator" onclick="inputOperator('/')">÷</button>
+            <button class="btn operator" onclick="inputOperator('*')">×</button>
+            <button class="btn operator" onclick="inputOperator('-')">−</button>
+            <button class="btn" onclick="inputDigit('7')">7</button>
+            <button class="btn" onclick="inputDigit('8')">8</button>
+            <button class="btn" onclick="inputDigit('9')">9</button>
+            <button class="btn operator" onclick="inputOperator('+')">+</button>
+            <button class="btn" onclick="inputDigit('4')">4</button>
+            <button class="btn" onclick="inputDigit('5')">5</button>
+            <button class="btn" onclick="inputDigit('6')">6</button>
+            <button class="btn equals" rowspan="2" onclick="calculateResult()">=</button>
+            <button class="btn" onclick="inputDigit('1')">1</button>
+            <button class="btn" onclick="inputDigit('2')">2</button>
+            <button class="btn" onclick="inputDigit('3')">3</button>
+            <button class="btn" onclick="inputDigit('0')" style="grid-column: span 2;">0</button>
+            <button class="btn" onclick="inputDot()">.</button>
+        </div>
+    </div>
+    <script>
+        const display = document.getElementById('display');
+        let current = '0';
+        let operator = '';
+        let operand = null;
+        let resetNext = false;
+        const MAX_DIGITS = 8;
+
+        function updateDisplay(val) {
+            if (val.length > MAX_DIGITS) {
+                display.textContent = val.slice(0, MAX_DIGITS) + '…';
+            } else {
+                display.textContent = val;
+            }
+        }
+
+        function inputDigit(digit) {
+            if (resetNext) {
+                current = digit;
+                resetNext = false;
+            } else {
+                if (current === '0') {
+                    current = digit;
+                } else if (current.replace('.', '').length < MAX_DIGITS) {
+                    current += digit;
+                }
+            }
+            updateDisplay(current);
+        }
+
+        function inputDot() {
+            if (resetNext) {
+                current = '0.';
+                resetNext = false;
+            } else if (!current.includes('.')) {
+                current += '.';
+            }
+            updateDisplay(current);
+        }
+
+        function clearDisplay() {
+            current = '0';
+            operator = '';
+            operand = null;
+            resetNext = false;
+            updateDisplay(current);
+        }
+
+        function inputOperator(op) {
+            if (operator && !resetNext) {
+                calculateResult();
+            }
+            operand = parseFloat(current);
+            operator = op;
+            resetNext = true;
+        }
+
+        function calculateResult() {
+            if (!operator) return;
+            let result = operand;
+            let curr = parseFloat(current);
+            switch (operator) {
+                case '+': result += curr; break;
+                case '-': result -= curr; break;
+                case '*': result *= curr; break;
+                case '/': result = curr === 0 ? 'Error' : result / curr; break;
+            }
+            if (typeof result === 'number') {
+                let resultStr = result.toString();
+                // Limit to 8 digits, handle decimals
+                if (resultStr.replace('.', '').length > MAX_DIGITS) {
+                    if (resultStr.includes('e')) {
+                        resultStr = result.toExponential(2);
+                    } else {
+                        let intPart = resultStr.split('.')[0];
+                        if (intPart.length > MAX_DIGITS) {
+                            resultStr = intPart.slice(0, MAX_DIGITS) + '…';
+                        } else {
+                            let decimals = MAX_DIGITS - intPart.length;
+                            resultStr = result.toFixed(decimals > 0 ? decimals : 0);
+                            if (resultStr.length > MAX_DIGITS) {
+                                resultStr = resultStr.slice(0, MAX_DIGITS) + '…';
+                            }
+                        }
+                    }
+                }
+                current = resultStr;
+            } else {
+                current = 'Error';
+            }
+            updateDisplay(current);
+            operator = '';
+            operand = null;
+            resetNext = true;
+        }
+    </script>
+</body>
+</html>
